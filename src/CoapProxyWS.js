@@ -23,45 +23,31 @@ class CoapProxy {
     _proxy() {
         this._server.on('request', (req, res) => {
             if (typeof req.headers.Observe !== 'undefined') {
-                this._handleSocketConnection(req, res);
+                this._handleObserveRequest(req, res);
             }
         });
     }
 
-    _handleSocketConnection(coapReq, coapConnection) {
+    _handleObserveRequest(coapReq, coapConnection) {
         const id = this._getSocketIdOption(coapReq.options);
         const socket = id && this._sockets.get(id.value.toString());
 
         if (socket) {   
             this._readAllCoapRequestData(coapReq).then(msg => socket.send(msg));
         } else {            
-            const id = this._generateId();
-            const socket = this._createSocket(id);            
-            
-            this._setSocketIdOption(coapConnection, id);            
+            const id = this._establishWebsocket(coapConnection);
 
-            socket.on('open', () => {
-                coapConnection.write(JSON.stringify({ status: 0 }));
-            });
+            this._piggybackedResponse(coapConnection, id);
 
-            socket.on('close', () => {
-                coapConnection._packet.options = [];
-                coapConnection.reset();
+            coapConnection.on('finish', () => {
+                socket.close();
                 this._deleteSocket(id);
-            });
-
-            socket.on('message', msg => {
-                coapConnection.write(msg);
             });
         }
     }
 
     _getSocketIdOption(options = []) {
         return options.filter(opt => opt.name === CoapProxy.SOCKET_ID_OPTION)[0];
-    }
-
-    _setSocketIdOption(coapConnection, id) {
-        coapConnection.setOption(CoapProxy.SOCKET_ID_OPTION, new Buffer(id));
     }
 
     _readAllCoapRequestData(coapReq) {
@@ -75,8 +61,33 @@ class CoapProxy {
         });
     }
 
+    _piggybackedResponse(coapConnection, id) {        
+        coapConnection.write(JSON.stringify({ id }));
+    }
+
+    _establishWebsocket(coapConnection) {
+        const id = this._generateId();
+        const socket = this._createSocket(id);
+
+        socket.on('open', () => {
+            coapConnection.write(JSON.stringify({ status: 0 }));
+        });
+
+        socket.on('close', () => {
+            coapConnection._packet.options = [];
+            coapConnection.reset();
+            this._deleteSocket(id);
+        });
+
+        socket.on('message', msg => {
+            coapConnection.write(msg);
+        });
+
+        return id;
+    }
+
     _generateId() {
-        return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString() + new Date().getTime();
+        return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString();
     }
 
     _createSocket(id) {
