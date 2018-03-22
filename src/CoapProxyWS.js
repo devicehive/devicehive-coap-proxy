@@ -67,11 +67,12 @@ class CoapProxy {
         socket.on('open', () => {
             coapConnection.write(JSON.stringify({ id }));
         }).on('close', () => {
-            coapConnection._packet.options = [];
-            coapConnection.reset();
-            this._deleteSocket(id);
+            this._resetCoapConnection(coapConnection, id);
         }).on('message', msg => {
             coapConnection.write(msg);
+        }).on('error', error => {
+            coapConnection.write(JSON.stringify({ error: 'Websocket error' }));
+            this._resetCoapConnection(coapConnection, id);
         });
 
         coapConnection.on('finish', () => {
@@ -91,6 +92,15 @@ class CoapProxy {
         this._sockets.set(id, socket);
 
         return socket;
+    }
+
+    _resetCoapConnection(conn, socketToRemove) {
+        conn._packet.options = [];
+        conn.reset();
+
+        if (socketToRemove) {
+            this._deleteSocket(socketToRemove);
+        }
     }
 
     _deleteSocket(id) {
