@@ -125,7 +125,6 @@ describe('Coap Proxy module', function() {
 
     it('Should end coap connection readable stream if WS connection has been closed by WS server', done => {
         const client = udp.createSocket('udp4');
-        client.bind(1488);
 
         wsServer.on('connection', socket => {
             socket.close();
@@ -145,7 +144,6 @@ describe('Coap Proxy module', function() {
 
     it('Should close WS connection with WS server if CoAP client has done reset', done => {
         const client = udp.createSocket('udp4');
-        client.bind(1489);
 
         wsServer.on('connection', socket => {
             socket.on('close', () => {
@@ -177,7 +175,7 @@ function sendObserveRequest(client) {
             name: 'Observe',
             value: new Buffer(0)
         }]
-    })
+    });
 
     client.send(message, 0, message.length, COAP_PORT_TEST, HOST_TEST);
 }

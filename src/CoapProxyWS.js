@@ -2,9 +2,14 @@ const coap = require('coap');
 const WS = require('ws');
 
 class CoapProxy {
-    constructor({ targetHost, targetPort }) {
+    constructor({ targetHost, targetPort, targetProtocol } = { targetProtocol: 'ws' }) {
+        if (!targetHost || !targetPort) {
+            throw new TypeError('targetHost and targetPort are mandatory properties of string type');
+        }
+
         this._targetHost = targetHost;
         this._targetPort = targetPort;
+        this._targetProtocol = targetProtocol;
         this._server = coap.createServer();
         this._sockets = new Map();
 
@@ -86,7 +91,7 @@ class CoapProxy {
     }
 
     _createSocket(id) {
-        const socket = new WS(`ws://${this._targetHost}:${this._targetPort}`);
+        const socket = new WS(`${this._targetProtocol}://${this._targetHost}:${this._targetPort}`);
         this._sockets.set(id, socket);
 
         return socket;
