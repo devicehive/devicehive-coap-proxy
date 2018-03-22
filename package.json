@@ -11,10 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "coap": "^0.21.0",
-    "mocha": "^5.0.4",
     "ws": "^5.0.0"
   },
   "devDependencies": {
-    "coap-packet": "^0.1.14"
+    "coap-packet": "^0.1.14",
+    "mocha": "^5.0.4"
   }
 }
