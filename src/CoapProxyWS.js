@@ -100,7 +100,7 @@ class CoapProxy {
     }
 
     _resetCoapConnection(conn, socketToRemove) {
-        conn._packet.options = [];
+        conn._packet.options = []; // THIS IS WORKAROUND TO AVOID EXCEPTION, PROPER SOLUTION IS REQUIRED
         conn.reset();
 
         if (socketToRemove) {
