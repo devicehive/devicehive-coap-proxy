@@ -1,6 +1,5 @@
 const coap = require('coap');
 const WS = require('ws');
-const url = require('url');
 
 class CoapProxy {
     constructor({ targetHost, targetPort }) {
@@ -38,11 +37,6 @@ class CoapProxy {
             const id = this._establishWebsocket(coapConnection);
 
             this._piggybackedResponse(coapConnection, id);
-
-            coapConnection.on('finish', () => {
-                socket.close();
-                this._deleteSocket(id);
-            });
         }
     }
 
@@ -51,7 +45,7 @@ class CoapProxy {
     }
 
     _readAllCoapRequestData(coapReq) {
-        const chunks = []
+        const chunks = [];
         return new Promise((resolve, reject) => {
             coapReq.on('data', chunk => {
                 chunks.push(chunk);
@@ -71,16 +65,17 @@ class CoapProxy {
 
         socket.on('open', () => {
             coapConnection.write(JSON.stringify({ status: 0 }));
-        });
-
-        socket.on('close', () => {
+        }).on('close', () => {
             coapConnection._packet.options = [];
             coapConnection.reset();
             this._deleteSocket(id);
+        }).on('message', msg => {
+            coapConnection.write(msg);
         });
 
-        socket.on('message', msg => {
-            coapConnection.write(msg);
+        coapConnection.on('finish', () => {
+            socket.close();
+            this._deleteSocket(id);
         });
 
         return id;
