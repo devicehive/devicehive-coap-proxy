@@ -34,14 +34,12 @@ class CoapProxy {
 
     _handleObserveRequest(coapReq, coapConnection) {
         const id = this._getSocketIdOption(coapReq.options);
-        const socket = id && this._sockets.get(id.value.toString());
+        const socket = id && id.value && this._sockets.get(id.value.toString());
 
         if (socket) {   
             this._readAllCoapRequestData(coapReq).then(msg => socket.send(msg));
         } else {            
-            const id = this._establishWebsocket(coapConnection);
-
-            this._piggybackedResponse(coapConnection, id);
+            this._establishWebsocket(coapConnection);
         }
     }
 
@@ -60,16 +58,14 @@ class CoapProxy {
         });
     }
 
-    _piggybackedResponse(coapConnection, id) {        
-        coapConnection.write(JSON.stringify({ id }));
-    }
-
     _establishWebsocket(coapConnection) {
         const id = this._generateId();
         const socket = this._createSocket(id);
 
+        coapConnection.write('{}');
+
         socket.on('open', () => {
-            coapConnection.write(JSON.stringify({ status: 0 }));
+            coapConnection.write(JSON.stringify({ id }));
         }).on('close', () => {
             coapConnection._packet.options = [];
             coapConnection.reset();

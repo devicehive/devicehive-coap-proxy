@@ -52,7 +52,7 @@ describe('Coap Proxy module', function() {
             res.on('data', data => {
                 const msg = JSON.parse(data.toString());
 
-                if (typeof msg.status !== 'undefined' || typeof msg.id !== 'undefined') {
+                if (typeof msg.id !== 'undefined' || typeof msg.test === 'undefined') {
                     return;
                 }
 
@@ -62,30 +62,15 @@ describe('Coap Proxy module', function() {
         }).end();
     });
 
-    it('Should send first piggybacked response when ID is created', done => {
+    it('Should send second response when WS is opened and ID is created', done => {
         let msgCount = 0;        
-        coap.request(coapRequestParams).on('response', res => {
-            res.on('data', data => {
-                msgCount++;
-
-                if (msgCount === 1) {
-                    const msg = JSON.parse(data.toString());
-                    assert.notEqual(typeof msg.id, 'undefined');
-                    done();
-                }
-            });
-        }).end();
-    });
-
-    it('Should send second message when WS socket is opened', done => {
-        let msgCount = 0;
         coap.request(coapRequestParams).on('response', res => {
             res.on('data', data => {
                 msgCount++;
 
                 if (msgCount === 2) {
                     const msg = JSON.parse(data.toString());
-                    assert.equal(msg.status, 0);
+                    assert.notEqual(typeof msg.id, 'undefined');
                     done();
                 }
             });
@@ -103,13 +88,11 @@ describe('Coap Proxy module', function() {
         coap.registerOption('111', str => new Buffer(str), buff => buff.toString());
 
         coap.request(coapRequestParams).on('response', res => {
-            let socketId = '';
             res.on('data', data => {
                 const msg = JSON.parse(data.toString());
                 
                 if (msg.id) {
-                    socketId = msg.id;
-                } else if (msg.status === 0) {
+                    const socketId = msg.id;
                     const secondRequest = {
                         options: {
                             [SOCKET_ID_OPTION]: socketId
