@@ -13,7 +13,7 @@ class CoapProxy {
         this._server = coap.createServer();
         this._sockets = new Map();
 
-        this._proxy();
+        this._proxyCoapRequests();
     }
 
     listen(port, address = 'localhost') {
@@ -24,7 +24,7 @@ class CoapProxy {
         });
     }
 
-    _proxy() {
+    _proxyCoapRequests() {
         this._server.on('request', (req, res) => {
             if (typeof req.headers.Observe !== 'undefined') {
                 res.write('{}');
@@ -40,7 +40,7 @@ class CoapProxy {
         const socket = id && id.value && this._sockets.get(id.value.toString());
 
         if (socket) {   
-            this._readAllCoapRequestData(coapReq).then(msg => socket.send(msg));
+            this._proxyMessage(coapReq, socket);
         } else {            
             this._establishWebsocket(coapConnection);
         }
@@ -48,6 +48,10 @@ class CoapProxy {
 
     _getSocketIdOption(options = []) {
         return options.filter(opt => opt.name === CoapProxy.SOCKET_ID_OPTION)[0];
+    }
+
+    _proxyMessage(coapReq, socket) {
+        this._readAllCoapRequestData(coapReq).then(msg => socket.send(msg));
     }
 
     _readAllCoapRequestData(coapReq) {
