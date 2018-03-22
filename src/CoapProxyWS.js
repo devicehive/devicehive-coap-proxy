@@ -27,12 +27,16 @@ class CoapProxy {
     _proxyCoapRequests() {
         this._server.on('request', (req, res) => {
             if (typeof req.headers.Observe !== 'undefined') {
-                res.write('{}');
+                this._piggybackedResponse(res);
                 this._handleObserveRequest(req, res);
             } else {
                 res.end(JSON.stringify({ error: 'Only Observe requests are supported' }));
             }
         });
+    }
+
+    _piggybackedResponse(res) {
+        res.write('{}');
     }
 
     _handleObserveRequest(coapReq, coapConnection) {
