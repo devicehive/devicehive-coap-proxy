@@ -148,6 +148,17 @@ describe('Coap Proxy module', function() {
             client.send(message, 0, message.length, COAP_PORT_TEST, HOST_TEST);
         });
     });
+
+    it('Should respond with error in case request is not observe type', done => {
+        coap.request({ port: COAP_PORT_TEST }).on('response', res => {
+            res.on('data', data => {
+                const msg = JSON.parse(data.toString());
+
+                assert.equal(msg.error, 'Only Observe requests are supported');
+                done();
+            });
+        }).end();
+    });
 });
 
 function sendObserveRequest(client) {

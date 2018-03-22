@@ -27,7 +27,10 @@ class CoapProxy {
     _proxy() {
         this._server.on('request', (req, res) => {
             if (typeof req.headers.Observe !== 'undefined') {
+                res.write('{}');
                 this._handleObserveRequest(req, res);
+            } else {
+                res.end(JSON.stringify({ error: 'Only Observe requests are supported' }));
             }
         });
     }
@@ -61,8 +64,6 @@ class CoapProxy {
     _establishWebsocket(coapConnection) {
         const id = this._generateId();
         const socket = this._createSocket(id);
-
-        coapConnection.write('{}');
 
         socket.on('open', () => {
             coapConnection.write(JSON.stringify({ id }));
