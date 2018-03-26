@@ -3,14 +3,14 @@ const coap = require('coap');
 coap.registerOption('111', Buffer, String);
 
 const reqParams = {
-    observe: true
+    observe: true,
+    host: 'localhost',
+    port: 5683
 };
 
 coap.request(reqParams).on('response', resStream => {
     resStream.on('data', data => {
         const msg = JSON.parse(data.toString());
-
-        console.log(msg);
 
         if (msg.id) {
             reqParams.headers = {
@@ -21,8 +21,12 @@ coap.request(reqParams).on('response', resStream => {
         } else if (msg.accessToken) {
             auth(msg.accessToken);
         } else if (msg.action === 'authenticate' && msg.status === 'success') {
-            createDevice();
+            createNetwork();
+        } else if (msg.action === 'network/insert' && msg.status === 'success') {
+            createDevice(msg.network.id);
         }
+
+        console.log(msg);
     });
 }).end();
 
@@ -41,13 +45,23 @@ function auth(accessToken) {
     }));
 }
 
-function createDevice() {
+function createNetwork() {
+    coap.request(reqParams).end(JSON.stringify({
+        action: 'network/insert',
+        network: {
+            name: 'coap-test-network',
+            description: 'testing CoAP proxy'
+        }
+    }));
+}
+
+function createDevice(networkId) {
     coap.request(reqParams).end(JSON.stringify({
         action: 'device/save',
-        deviceId: 'coap-test',
+        deviceId: 'coap-test-device',
         device: {
-            name: 'coap-test',
-            networkId: 1
+            name: 'coap-test-device',
+            networkId
         }
     }));
 }
