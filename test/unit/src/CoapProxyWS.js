@@ -27,7 +27,7 @@ describe('Coap Proxy module', function() {
     before(done => {
         wsServer = new WS.Server({ port: WS_PORT_TEST });
 
-        const proxy = new CoapProxy({ targetHost: HOST_TEST, targetPort: WS_PORT_TEST });
+        const proxy = new CoapProxy(`ws://${HOST_TEST}:${WS_PORT_TEST}`);
         proxy.listen(COAP_PORT_TEST).then(done);
     });
 

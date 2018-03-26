@@ -1,6 +1,5 @@
 {
     "HOST": "localhost",
     "PORT": 5683,
-    "TARGET_HOST": "localhost",
-    "TARGET_PORT": 3001
+    "TARGET": "ws://localhost:3001"
 }
