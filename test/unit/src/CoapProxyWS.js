@@ -62,6 +62,25 @@ describe('Coap Proxy module', function() {
         }).end();
     });
 
+    it('Should send first piggybacked response in case request is valid (observe request) with status 0', done => {
+        let msgCount = 0;
+        coap.request(coapRequestParams).on('response', res => {
+            res.on('data', data => {
+                const msg = JSON.parse(data.toString());
+
+                if (msgCount === 0 && msg.status === 0) {
+                    done();
+                    return;
+                } else if (msgCount !== 0) {
+                    done(new Error('First piggybacked response does not have status 0'));
+                    return;
+                }
+
+                msgCount++;
+            });
+        }).end();
+    });
+
     it('Should send second response when WS is opened and ID is created', done => {
         let msgCount = 0;        
         coap.request(coapRequestParams).on('response', res => {

@@ -34,7 +34,9 @@ class CoapProxy {
     }
 
     _piggybackedResponse(res) {
-        res.write('{}');
+        res.write(JSON.stringify({
+            status: 0
+        }));
     }
 
     _handleObserveRequest(coapReq, coapConnection) {
@@ -53,7 +55,7 @@ class CoapProxy {
     }
 
     _proxyMessage(coapReq, socket) {
-        this._readAllCoapRequestData(coapReq).then(msg => socket.send(msg));
+        this._readAllCoapRequestData(coapReq).then(msg => socket.send(msg.toString()));
     }
 
     _readAllCoapRequestData(coapReq) {
