@@ -73,7 +73,6 @@ describe('Coap Proxy module', function() {
                     return;
                 } else if (msgCount !== 0) {
                     done(new Error('First piggybacked response does not have status 0'));
-                    return;
                 }
 
                 msgCount++;
