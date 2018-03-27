@@ -1,5 +1,6 @@
 const coap = require('coap');
 const WS = require('ws');
+const debug = require('debug')('coap-proxy');
 
 class CoapProxy {
     constructor(target) {
@@ -25,9 +26,11 @@ class CoapProxy {
     _proxyCoapRequests() {
         this._server.on('request', (req, res) => {
             if (typeof req.headers.Observe !== 'undefined') {
+                debug('Observe request');
                 this._piggybackedResponse(res);
                 this._handleObserveRequest(req, res);
             } else {
+                debug('Not Observe request, rejecting...');
                 res.end(JSON.stringify({ error: 'Only Observe requests are supported' }));
             }
         });
@@ -43,8 +46,10 @@ class CoapProxy {
         const id = this._getSocketIdOption(coapReq.options);
         const socket = id && id.value && this._sockets.get(id.value.toString());
 
-        if (socket) {   
-            this._proxyMessage(coapReq, socket);
+        if (socket) {
+            this._proxyMessage(coapReq, socket).then(stringMsg => {
+                debug(`id: ${id.value} — CoAP message ${stringMsg}`);
+            });
         } else {            
             this._establishWebsocket(coapConnection);
         }
@@ -55,7 +60,12 @@ class CoapProxy {
     }
 
     _proxyMessage(coapReq, socket) {
-        this._readAllCoapRequestData(coapReq).then(msg => socket.send(msg.toString()));
+        return this._readAllCoapRequestData(coapReq).then(msg => {
+            const stringMsg = msg.toString();
+            socket.send(stringMsg);
+
+            return stringMsg;
+        });
     }
 
     _readAllCoapRequestData(coapReq) {
@@ -74,17 +84,22 @@ class CoapProxy {
         const socket = this._createSocket(id);
 
         socket.on('open', () => {
+            debug(`id: ${id} — WebSocket has been opened`);
             coapConnection.write(JSON.stringify({ id }));
         }).on('close', () => {
+            debug(`id: ${id} — WebSocket has been closed`);
             this._resetCoapConnection(coapConnection, id);
         }).on('message', msg => {
+            debug(`id: ${id} — WebSocket message ${JSON.stringify(msg)}`);
             coapConnection.write(msg);
         }).on('error', error => {
+            debug(`id: ${id} — WebSocket error: ${JSON.stringify(error)}`);
             coapConnection.write(JSON.stringify({ error: 'Websocket error' }));
             this._resetCoapConnection(coapConnection, id);
         });
 
         coapConnection.on('finish', () => {
+            debug(`id: ${id} — CoAP connection has been closed`);
             socket.close();
             this._deleteSocket(id);
         });
