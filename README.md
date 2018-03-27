@@ -1,14 +1,23 @@
 # devicehive-coap-proxy
 CoAP to WS proxy written in Node.js
 
-# Request and response data format
-Since DeviceHive interfaces use JSON as data format CoAP proxy will respond in JSON
+# How to start
+**Prerequisite: DeviceHive with WebSocket API must be running.**
+
+1. Run CoAP proxy:
+    - `docker build -t dh-coap-proxy .`
+    - `docker run -e PROXY.TARGET=your DeviceHive WebSocket API URL dh-coap-proxy`
+2. Run `npm run example`
+
+Observe new Network and Device have been created
 
 # Configuration
 This proxy has only 3 properties to configure, you can override them with environment variables:
 1. `PROXY.HOST` — Proxy server host (default localhost)
 2. `PROXY.PORT` — Proxy server port (default 5683)
 3. `PROXY.TARGET` — URL of DeviceHive WebSocket API (or any other WebSocket API)
+
+Or you can share volume with Docker container (`config` directory)
 
 # Establishing Observe connection
 To establish Observe connection you must initiate Observe request then you will receive piggybacked response right away with:
