@@ -9,7 +9,7 @@ LABEL org.label-schema.url="https://devicehive.com" \
       org.label-schema.version="development"
 
 ENV WORK_DIR=/usr/src/app/
-ENV CONF_DIR=/usr/src/app/conf
+ENV CONF_DIR=/usr/src/app/config
 RUN mkdir -p ${WORK_DIR} \
     && mkdir -p ${CONF_DIR} \
     && cd ${WORK_DIR}
