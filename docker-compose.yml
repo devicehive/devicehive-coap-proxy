@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  proxy:
+    build: .
+    environment:
+      - DEBUG=coap-proxy
+
+  nginx:
+    build: ./nginx
+    ports:
+      - 53:53/udp
+    links:
+      - proxy
