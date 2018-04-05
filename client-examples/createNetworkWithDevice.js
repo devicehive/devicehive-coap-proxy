@@ -5,7 +5,7 @@ coap.registerOption('111', Buffer, String);
 const reqParams = {
     observe: true,
     host: 'localhost',
-    port: 5683
+    port: 53
 };
 
 coap.request(reqParams).on('response', resStream => {
