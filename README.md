@@ -5,9 +5,11 @@ CoAP to WS proxy written in Node.js
 **Prerequisite: DeviceHive with WebSocket API must be running.**
 
 1. Run CoAP proxy:
-    - `docker build -t dh-coap-proxy .`
-    - `docker run -e PROXY.TARGET=your DeviceHive WebSocket API URL dh-coap-proxy`
+    - Set up appropriate env variables in `docker-compose.yml` **(PROXY_TARGET is a must)**
+    - `docker-compose up`
 2. Run `npm run example`
+
+**Note: If you want to scale CoAP proxy ensure you have added more upstream servers in nginx/nginx.conf**
 
 Observe new Network and Device have been created
 

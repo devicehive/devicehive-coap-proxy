@@ -4,6 +4,7 @@ services:
   proxy:
     build: .
     environment:
+      - ENVSEPARATOR
       - DEBUG=coap-proxy
 
   nginx:
