@@ -9,15 +9,16 @@ CoAP to WS proxy written in Node.js
     - `docker-compose up`
 2. Run `npm run example`
 
-**Note: If you want to scale CoAP proxy ensure you have added more upstream servers in nginx/nginx.conf**
+Observe new Network and Device have been created for default DH admin user (dhadmin)
 
-Observe new Network and Device have been created
+**Note: If you want to scale CoAP proxy ensure you have added more upstream servers in nginx/nginx.conf**
 
 # Configuration
 This proxy has only 3 properties to configure, you can override them with environment variables:
 1. `PROXY.HOST` — Proxy server host (default localhost)
 2. `PROXY.PORT` — Proxy server port (default 5683)
 3. `PROXY.TARGET` — URL of DeviceHive WebSocket API (or any other WebSocket API)
+4. `PROXY.MAX_WS_CONNECTIONS` — Max number of WS connections proxy can open with target, after WS connections reach this value new CoAP clients won't be able to connect with Observe request
 
 Or you can share volume with Docker container (`config` directory)
 

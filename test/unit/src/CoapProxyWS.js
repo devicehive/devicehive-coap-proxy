@@ -23,16 +23,19 @@ describe('Coap Proxy module', function() {
     this.timeout(300);
 
     let wsServer;
+    let proxy;
 
     before(done => {
         wsServer = new WS.Server({ port: WS_PORT_TEST });
 
-        const proxy = new CoapProxy(`ws://${HOST_TEST}:${WS_PORT_TEST}`);
+        proxy = new CoapProxy(`ws://${HOST_TEST}:${WS_PORT_TEST}`);
         proxy.listen(COAP_PORT_TEST).then(done);
     });
 
     afterEach(() => {
         wsServer.removeAllListeners('connection');
+        wsServer.clients.forEach(c => c.close());
+        proxy.maxWSConnections(10);
     });
 
     it('Should proxy CoAP request to WS server', done => {
@@ -174,6 +177,29 @@ describe('Coap Proxy module', function() {
 
                 assert.equal(msg.error, 'Only Observe requests are supported');
                 done();
+            });
+        }).end();
+    });
+
+    it('Should respond with error in case proxy has reached maximum WS connections', done => {
+        proxy.maxWSConnections(1);
+
+        coap.request(coapRequestParams).on('response', res => {
+            res.on('data', data => {
+                const msg = JSON.parse(data.toString());
+
+                if (msg.id) {
+                    coap.request(coapRequestParams).on('response', res => {
+                        res.on('data', data => {
+                            const msg = JSON.parse(data.toString());
+
+                            if (msg.error) {
+                                assert.equal(msg.error, 'proxy has reached maximum WS connections');
+                                done();
+                            }
+                        });
+                    }).end();
+                }
             });
         }).end();
     });
