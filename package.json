@@ -1,0 +1,24 @@
+{
+  "name": "devicehive-coap-proxy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "example": "node client-examples/createNetworkWithDevice",
+    "test": "./node_modules/.bin/mocha --recursive --exit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "coap": "^0.21.0",
+    "debug": "^3.1.0",
+    "json-evn-configurator": "^1.0.6",
+    "ws": "^5.0.0"
+  },
+  "devDependencies": {
+    "coap-packet": "^0.1.14",
+    "mocha": "^5.0.4"
+  }
+}
