@@ -2,6 +2,8 @@ const coap = require('coap');
 const WS = require('ws');
 const debug = require('debug')('coap-proxy');
 
+const DEFAULT_MAX_WS_CONNECTIONS = 1000;
+
 class CoapProxy {
     constructor(target) {
         if (!target) {
@@ -11,6 +13,7 @@ class CoapProxy {
         this._target = target;
         this._server = coap.createServer();
         this._sockets = new Map();
+        this._maxWSConnections = DEFAULT_MAX_WS_CONNECTIONS;        
 
         this._proxyCoapRequests();
     }
@@ -23,10 +26,30 @@ class CoapProxy {
         });
     }
 
+    hasReachedMaxWSConnections() {
+        return this._sockets.size >= this.maxWSConnections();
+    }
+
+    maxWSConnections(count) {
+        if (typeof count === 'undefined') {
+            return this._maxWSConnections;
+        } else {
+            const c = +count
+            this._maxWSConnections = c > 0 ? c : DEFAULT_MAX_WS_CONNECTIONS;
+        }
+    }
+
     _proxyCoapRequests() {
         this._server.on('request', (req, res) => {
             if (typeof req.headers.Observe !== 'undefined') {
                 debug('Observe request');
+
+                if (this.hasReachedMaxWSConnections()) {
+                    debug('Proxy has reached maximum WS connections! Rejecting request...');
+                    res.end(JSON.stringify({ error: 'proxy has reached maximum WS connections' }));
+                    return;
+                }
+
                 this._piggybackedResponse(res);
                 this._handleObserveRequest(req, res);
             } else {
