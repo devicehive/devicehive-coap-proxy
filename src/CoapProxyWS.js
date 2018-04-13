@@ -2,10 +2,8 @@ const coap = require('coap');
 const WS = require('ws');
 const debug = require('debug')('coap-proxy');
 
-const DEFAULT_MAX_WS_CONNECTIONS = 1000;
-
 class CoapProxy {
-    constructor(target) {
+    constructor(target, maxConnections) {
         if (!target) {
             throw new TypeError('target are mandatory properties of string type');
         }
@@ -13,7 +11,7 @@ class CoapProxy {
         this._target = target;
         this._server = coap.createServer();
         this._sockets = new Map();
-        this._maxWSConnections = DEFAULT_MAX_WS_CONNECTIONS;        
+        this._maxWSConnections = maxConnections;
 
         this._proxyCoapRequests();
     }
@@ -34,8 +32,12 @@ class CoapProxy {
         if (typeof count === 'undefined') {
             return this._maxWSConnections;
         } else {
-            const c = +count
-            this._maxWSConnections = c > 0 ? c : DEFAULT_MAX_WS_CONNECTIONS;
+            const c = +count;
+
+            if (c <= 0 || isNaN(c)) {
+                throw new TypeError('max WS connections count must be number more than 0');
+            }
+            this._maxWSConnections = c;
         }
     }
 

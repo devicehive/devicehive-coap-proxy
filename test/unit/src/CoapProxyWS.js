@@ -35,7 +35,7 @@ describe('Coap Proxy module', function() {
     afterEach(() => {
         wsServer.removeAllListeners('connection');
         wsServer.clients.forEach(c => c.close());
-        proxy.maxWSConnections(0);
+        proxy.maxWSConnections(10);
     });
 
     it('Should proxy CoAP request to WS server', done => {
