@@ -8,12 +8,15 @@ from coapthon.messages.option import Option
 from coapthon.client.helperclient import HelperClient
 import json
 import time
+import uuid
 
 # Options
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 5683
-# Put you access token
-ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
+# Put your access token
+ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0NDk0MzI4OTk1LCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.1fvGx-tFraJwHD7yu6RoKbivmjFuwiMsSfg_5jEiic4'
+# Put your device id
+DEVICE_ID = 'CoAP-python-test-device'
 
 # Message id option
 MESSAGE_ID_OPTION = 111
@@ -31,9 +34,11 @@ class DeviceHiveCoAPClientException(Exception):
 class DeviceHiveCoAPClient(object):
     """DeviceHive CoAP client"""
 
-    def __init__(self, host, port, path='/', timeout=30, response_timeout=0.01):
+    def __init__(self, host, port, path='/', timeout=None,
+                 response_timeout=0.01):
         self._message_id = None
         self._response = None
+        self._responses = {}
         self._path = path
         self._timeout = timeout
         self._response_timeout = response_timeout
@@ -54,11 +59,18 @@ class DeviceHiveCoAPClient(object):
             request.add_option(option)
         return request
 
-    def _sync_request(self, payload='', *options):
+    def _async_request(self, callback, payload='', *options):
         request = self._observe_request(self._path, options)
         if payload != '':
             request.payload = payload
-        self._client.send_request(request, self._sync_response, self._timeout)
+        self._client.send_request(request, callback, self._timeout)
+
+    def _async_message_id_request(self, callback, payload):
+        self._async_request(callback, payload, (MESSAGE_ID_OPTION,
+                                                self._message_id))
+
+    def _sync_request(self, payload='', *options):
+        self._async_request(self._sync_response, payload, *options)
         self._response = None
         self._wait_response()
 
@@ -68,32 +80,74 @@ class DeviceHiveCoAPClient(object):
     def _sync_response(self, response):
         self._response = response
 
-    def _wait_response(self):
+    def _wait_response(self, request_id=None):
+        if request_id is not None:
+            response = self._responses.get(request_id)
+            if response is not None:
+                self._response = response
+                del self._responses[request_id]
         while self._response is None:
             time.sleep(self._response_timeout)
+        if request_id is None:
+            return
+        payload = self._decode_response_payload(self._response)
+        if payload['requestId'] != request_id:
+            self._responses[request_id] = self._response
+            self._wait_response(request_id)
+
+    @staticmethod
+    def _encode_request_payload(payload):
+        request_id = str(uuid.uuid4())
+        payload['requestId'] = request_id
+        return json.dumps(payload), request_id
+
+    @staticmethod
+    def _decode_response_payload(response):
+        return json.loads(response.payload)
 
     def _status_request(self):
         self._sync_request()
-        response = json.loads(self._response.payload)
-        if response['status'] != 0:
+        payload = self._decode_response_payload(self._response)
+        if payload['status'] != 0:
             raise DeviceHiveCoAPClientException('invalid status: %s' %
-                                                response['status'])
+                                                payload['status'])
         self._response = None
         self._wait_response()
-        response = json.loads(self._response.payload)
-        self._message_id = response['id']
+        payload = self._decode_response_payload(self._response)
+        self._message_id = payload['id']
+
+    def _handle_response_payload(self, response):
+        payload = self._decode_response_payload(response)
+        if payload['status'] != 'success':
+            raise DeviceHiveCoAPClientException(
+                'response code: %s, error: %s' % (payload['code'],
+                                                  payload['error']))
+        return payload
+
+    def _send_sync_request(self, request_payload):
+        payload, request_id = self._encode_request_payload(request_payload)
+        self._sync_message_id_request(payload)
+        self._wait_response(request_id)
+        return self._handle_response_payload(self._response)
 
     def authorize(self, access_token):
-        # TODO: finish method after bug fixing.
-        payload = json.dumps({'action': 'authenticate', 'token': access_token})
-        self._sync_message_id_request(payload)
-        self._wait_response()
-        response = json.loads(self._response.payload)
-        print(response)
-        self._response = None
-        self._wait_response()
-        response = json.loads(self._response.payload)
-        print(response)
+        request_payload = {
+            'action': 'authenticate',
+            'token': access_token,
+        }
+        self._send_sync_request(request_payload)
+
+    def create_device(self, device_id):
+        request_payload = {
+            'action': 'device/save',
+            'deviceId': device_id,
+            'device': {
+                'name': device_id
+            }
+        }
+        self._send_sync_request(request_payload)
+
 
 dh_client = DeviceHiveCoAPClient(SERVER_HOST, SERVER_PORT)
 dh_client.authorize(ACCESS_TOKEN)
+dh_client.create_device(DEVICE_ID)
