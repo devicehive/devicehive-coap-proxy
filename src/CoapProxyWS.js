@@ -52,7 +52,6 @@ class CoapProxy {
                     return;
                 }
 
-                this._piggybackedResponse(res);
                 this._handleObserveRequest(req, res);
             } else {
                 debug('Not Observe request, rejecting...');
@@ -75,7 +74,8 @@ class CoapProxy {
             this._proxyMessage(coapReq, socket).then(stringMsg => {
                 debug(`id: ${id.value} — CoAP message ${stringMsg}`);
             });
-        } else {            
+        } else {
+            this._piggybackedResponse(res);
             this._establishWebsocket(coapConnection);
         }
     }
