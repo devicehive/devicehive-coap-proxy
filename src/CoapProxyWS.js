@@ -60,12 +60,6 @@ class CoapProxy {
         });
     }
 
-    _piggybackedResponse(res) {
-        res.write(JSON.stringify({
-            status: 0
-        }));
-    }
-
     _handleObserveRequest(coapReq, coapConnection) {
         const id = this._getSocketIdOption(coapReq.options);
         const socket = id && id.value && this._sockets.get(id.value.toString());
@@ -75,7 +69,7 @@ class CoapProxy {
                 debug(`id: ${id.value} — CoAP message ${stringMsg}`);
             });
         } else {
-            this._piggybackedResponse(res);
+            this._piggybackedResponse(coapConnection);
             this._establishWebsocket(coapConnection);
         }
     }
@@ -102,6 +96,12 @@ class CoapProxy {
                 resolve(Buffer.concat(chunks));
             }).on('error', reject);
         });
+    }
+
+    _piggybackedResponse(coapConnection) {
+        coapConnection.write(JSON.stringify({
+            status: 0
+        }));
     }
 
     _establishWebsocket(coapConnection) {
