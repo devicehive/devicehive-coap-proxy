@@ -1,4 +1,4 @@
-const coap = require('coap');
+const coap = require('./coap');
 const WS = require('ws');
 const debug = require('debug')('coap-proxy');
 
@@ -69,7 +69,6 @@ class CoapProxy {
                 debug(`id: ${id.value} — CoAP message ${stringMsg}`);
             });
         } else {
-            this._piggybackedResponse(coapConnection);
             this._establishWebsocket(coapConnection);
         }
     }
