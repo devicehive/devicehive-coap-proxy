@@ -9,7 +9,7 @@ class CoapProxy {
         }
 
         this._target = target;
-        this._server = coap.createServer();
+        this._server = coap.createServer({ piggybackReplyMs: 1 });
         this._sockets = new Map();
         this._maxWSConnections = maxConnections;
 
