@@ -54,23 +54,34 @@ class CoapProxy {
 
                 this._handleObserveRequest(req, res);
             } else {
-                debug('Not Observe request, rejecting...');
-                res.end(JSON.stringify({ error: 'Only Observe requests are supported' }));
+                if (this._getSocket(req)) {
+                    this._handleObserveRequest(req, res);
+                } else {
+                    debug('Not Observe request to unexisting socket, rejecting...');
+                    res.end(JSON.stringify({ error: 'Valid 111 header (socket ID) is required' }));
+                }
             }
         });
     }
 
     _handleObserveRequest(coapReq, coapConnection) {
-        const id = this._getSocketIdOption(coapReq.options);
-        const socket = id && id.value && this._sockets.get(id.value.toString());
+        const socket = this._getSocket(coapReq);
 
         if (socket) {
             this._proxyMessage(coapReq, socket).then(stringMsg => {
-                debug(`id: ${id.value} — CoAP message ${stringMsg}`);
+                debug(`id: ${socket.coapId} — CoAP message ${stringMsg}`);
+                coapConnection.end();
             });
         } else {
             this._establishWebsocket(coapConnection);
         }
+    }
+
+    _getSocket(coapReq) {
+        const id = this._getSocketIdOption(coapReq.options);
+        const socket = id && id.value && this._sockets.get(id.value.toString());
+
+        return socket;
     }
 
     _getSocketIdOption(options = []) {
@@ -110,6 +121,7 @@ class CoapProxy {
         socket.on('open', () => {
             debug(`id: ${id} — WebSocket has been opened`);
             coapConnection.write(JSON.stringify({ id }));
+            socket.coapId = id;
         }).on('close', () => {
             debug(`id: ${id} — WebSocket has been closed`);
             this._resetCoapConnection(coapConnection, id);
