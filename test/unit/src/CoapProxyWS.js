@@ -23,7 +23,7 @@ const coapObserveRequestParams = {
     observe: true
 };
 
-describe('Coap Proxy module', function() {
+describe('CoAP Proxy', function() {
     this.timeout(300);
 
     let wsServer;
@@ -177,7 +177,7 @@ describe('Coap Proxy module', function() {
                             const msg = JSON.parse(data.toString());
 
                             if (msg.error) {
-                                assert.equal(msg.error, 'proxy has reached maximum WS connections');
+                                assert.equal(msg.error, 'Proxy has reached maximum WS connections');
                                 done();
                             }
                         });

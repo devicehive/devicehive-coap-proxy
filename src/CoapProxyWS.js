@@ -48,14 +48,18 @@ class CoapProxy {
 
                 if (this.hasReachedMaxWSConnections()) {
                     debug('Proxy has reached maximum WS connections! Rejecting request...');
-                    res.end(JSON.stringify({ error: 'proxy has reached maximum WS connections' }));
+                    res.end(JSON.stringify({ error: 'Proxy has reached maximum WS connections' }));
                     return;
                 }
 
-                this._handleObserveRequest(req, res);
+                if (this._getSocket(req)) {
+                    res.end(JSON.stringify({ error: 'Socket with this ID (111 header) already exists, please issue not oberve request to send WS message' }));
+                } else {
+                    this._handleRequest(req, res);
+                }
             } else {
                 if (this._getSocket(req)) {
-                    this._handleObserveRequest(req, res);
+                    this._handleRequest(req, res);
                 } else {
                     debug('Not Observe request to unexisting socket, rejecting...');
                     res.end(JSON.stringify({ error: 'Valid 111 header (socket ID) is required' }));
@@ -64,7 +68,7 @@ class CoapProxy {
         });
     }
 
-    _handleObserveRequest(coapReq, coapConnection) {
+    _handleRequest(coapReq, coapConnection) {
         const socket = this._getSocket(coapReq);
 
         if (socket) {
