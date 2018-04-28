@@ -4,7 +4,7 @@ coap.registerOption('111', Buffer, String);
 
 const reqParams = {
     host: 'localhost',
-    port: 5683
+    port: 53
 };
 
 const obsReqParams  = {
