@@ -85,6 +85,9 @@ class DeviceHiveCoAPClient(object):
         if action == 'command/insert' \
                 and self._command_insert_handler is not None:
             self._command_insert_handler(self, payload['command'])
+        if action == 'command/update' \
+                and self._command_update_handler is not None:
+            self._command_update_handler(self, payload['command'])
 
     @staticmethod
     def _decode_response_payload(payload):
@@ -165,12 +168,26 @@ class DeviceHiveCoAPClient(object):
         }
         return self._wait_message_id_request(payload)['subscriptionId']
 
+    def subscribe_command_update(self, device_id, handler):
+        self._command_update_handler = handler
+        payload = {
+            'action': 'command/subscribe',
+            'deviceId': device_id,
+            'returnUpdatedCommands': True
+        }
+        return self._wait_message_id_request(payload)['subscriptionId']
+
     def stop(self):
         self._event_client.stop()
 
 
-def handle_command_insert(client, command):
+def handle_command_insert(_, command):
     print('---COMMAND-INSERTED---')
+    print(command)
+
+
+def handle_command_update(_, command):
+    print('---COMMAND-UPDATED---')
     print(command)
 
 
