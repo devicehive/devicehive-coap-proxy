@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "example": "node client-examples/createNetworkWithDevice",
+    "example": "node examples/createNetworkWithDevice",
     "test": "./node_modules/.bin/mocha --recursive --exit"
   },
   "keywords": [],
