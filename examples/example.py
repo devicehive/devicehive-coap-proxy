@@ -12,10 +12,11 @@ import uuid
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 5683
 # Put your access token
-ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0OTA3MzMxNDcwLCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.Z9anvKqpJMAVJ9Zv6dltxnTNisT_-zRNKU2b-oX2xOQ'
+ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
 # Put your device id
 DEVICE_ID = 'CoAP-Python-Test-Device'
 DEVICE_COMMAND = 'Test-Command'
+DEVICE_NOTIFICATION = 'Test-Notification'
 
 # Message id option
 MESSAGE_ID_OPTION = 111
@@ -174,6 +175,17 @@ class DeviceHiveCoAPClient(object):
         }
         self._wait_message_id_request(payload)
 
+    def send_notification(self, device_id, notification_name, params):
+        payload = {
+            'action': 'notification/insert',
+            'deviceId': device_id,
+            'notification': {
+                'notification': notification_name,
+                'parameters': params
+            }
+        }
+        return self._wait_message_id_request(payload)['notification']['id']
+
     def subscribe_command_insert(self, device_id, handler):
         self._command_insert_handler = handler
         payload = {
@@ -224,5 +236,6 @@ dh_client.create_device(DEVICE_ID)
 dh_client.subscribe_command_insert(DEVICE_ID, handle_command_insert)
 dh_client.subscribe_command_update(DEVICE_ID, handle_command_update)
 dh_client.subscribe_notification(DEVICE_ID, handle_notification)
-command_id = dh_client.send_command(DEVICE_ID, DEVICE_COMMAND)
-dh_client.update_command(DEVICE_ID, command_id, 'updated', {'result': True})
+cmd_id = dh_client.send_command(DEVICE_ID, DEVICE_COMMAND)
+dh_client.update_command(DEVICE_ID, cmd_id, 'updated', {'result': True})
+dh_client.send_notification(DEVICE_ID, DEVICE_NOTIFICATION, {'param': 'value'})
