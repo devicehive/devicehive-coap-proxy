@@ -12,10 +12,10 @@ import uuid
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 5683
 # Put your access token
-ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0ODIyNDM5NDM2LCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.X2KDSlECclGQiOq4swIC0bdQavSBP3Zu7y4qPYE6LCo'
+ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0OTAzMTk4OTA4LCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.8MfPPaNsSHEAo8TO9j63dEPTDZebWuHM_kbmkbdGehw'
 # Put your device id
-DEVICE_ID = 'CoAP-python-test-device'
-DEVICE_COMMAND = 'Test-command'
+DEVICE_ID = 'CoAP-Python-Test-Device'
+DEVICE_COMMAND = 'Test-Command'
 
 # Message id option
 MESSAGE_ID_OPTION = 111
@@ -48,17 +48,24 @@ class DeviceHiveCoAPClientException(Exception):
 class DeviceHiveCoAPClient(object):
     """DeviceHive CoAP client"""
 
-    def __init__(self, host, port, event_timeout=0.001, path='/', timeout=None):
-        self._message_id = None
-        self._events = {}
-        self._event_timeout = event_timeout
+    def __init__(self, host, port, path='/', timeout=None, event_timeout=0.001):
+        self._host = host
+        self._port = port
         self._path = path
         self._timeout = timeout
-        self._client = HelperClient(server=(host, port))
+        self._event_timeout = event_timeout
+        self._events = {}
+        self._message_id = None
+        self._event_client = None
         self._event_request()
 
+    def _client(self):
+        return HelperClient(server=(self._host, self._port))
+
     def _event_request(self):
-        self._client.observe(self._path, self._event_callback, self._timeout)
+        self._event_client = self._client()
+        self._event_client.observe(self._path, self._event_callback,
+                                   self._timeout)
 
     def _event_callback(self, response):
         if response.payload is None:
@@ -96,12 +103,13 @@ class DeviceHiveCoAPClient(object):
         request_id = str(uuid.uuid4())
         payload['requestId'] = request_id
         payload = self._encode_request_payload(payload)
+        request_client = self._client()
 
-        def empty_callback(response):
-            print('---UNEXPECTED-RESPONSE---')
-            print(response.payload)
-        self._client.post(self._path, payload, empty_callback, self._timeout,
-                          (MESSAGE_ID_OPTION, self._message_id))
+        def response_callback(_):
+            request_client.stop()
+        request_client.post(self._path, payload, response_callback,
+                            self._timeout, (MESSAGE_ID_OPTION,
+                                            self._message_id))
         return request_id
 
     def _wait_message_id_request(self, payload):
