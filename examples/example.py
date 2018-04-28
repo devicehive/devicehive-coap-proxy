@@ -12,7 +12,7 @@ import uuid
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 5683
 # Put your access token
-ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0OTAzMTk4OTA4LCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.8MfPPaNsSHEAo8TO9j63dEPTDZebWuHM_kbmkbdGehw'
+ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0OTA1MDYyNTk4LCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.JPJDKTkMab9dbZ4GKEsCQNgJBIb9_v-cUImAnTnyoRU'
 # Put your device id
 DEVICE_ID = 'CoAP-Python-Test-Device'
 DEVICE_COMMAND = 'Test-Command'
@@ -57,6 +57,9 @@ class DeviceHiveCoAPClient(object):
         self._events = {}
         self._message_id = None
         self._event_client = None
+        self._command_insert_handler = None
+        self._command_update_handler = None
+        self._notification_handler = None
         self._event_request()
 
     def _client(self):
@@ -74,9 +77,14 @@ class DeviceHiveCoAPClient(object):
         if self._message_id is None:
             self._message_id = payload['id']
             return
-        self._events[payload['requestId']] = payload
-        print('---EVENT-PAYLOAD---')
-        print(payload)
+        request_id = payload.get('requestId')
+        if request_id is not None:
+            self._events[request_id] = payload
+            return
+        action = payload['action']
+        if action == 'command/insert' \
+                and self._command_insert_handler is not None:
+            self._command_insert_handler(self, payload['command'])
 
     @staticmethod
     def _decode_response_payload(payload):
@@ -116,6 +124,7 @@ class DeviceHiveCoAPClient(object):
         request_id = self._message_id_request(payload)
         payload = self._wait_event(request_id)
         if payload['status'] != 'success':
+            self.stop()
             raise DeviceHiveCoAPClientException(
                 'response code: %s, error: %s' % (payload['code'],
                                                   payload['error']))
@@ -146,10 +155,27 @@ class DeviceHiveCoAPClient(object):
                 'command': command_name
             }
         }
-        self._wait_message_id_request(payload)
+        return self._wait_message_id_request(payload)['command']['id']
+
+    def subscribe_command_insert(self, device_id, handler):
+        self._command_insert_handler = handler
+        payload = {
+            'action': 'command/subscribe',
+            'deviceId': device_id,
+        }
+        return self._wait_message_id_request(payload)['subscriptionId']
+
+    def stop(self):
+        self._event_client.stop()
+
+
+def handle_command_insert(client, command):
+    print('---COMMAND-INSERTED---')
+    print(command)
 
 
 dh_client = DeviceHiveCoAPClient(SERVER_HOST, SERVER_PORT)
 dh_client.authorize(ACCESS_TOKEN)
 dh_client.create_device(DEVICE_ID)
+dh_client.subscribe_command_insert(DEVICE_ID, handle_command_insert)
 dh_client.send_command(DEVICE_ID, DEVICE_COMMAND)
