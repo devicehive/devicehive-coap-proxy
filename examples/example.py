@@ -12,7 +12,7 @@ import uuid
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 5683
 # Put your access token
-ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0OTA1MDYyNTk4LCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.JPJDKTkMab9dbZ4GKEsCQNgJBIb9_v-cUImAnTnyoRU'
+ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJwYXlsb2FkIjp7ImEiOlsyLDMsNCw1LDYsNyw4LDksMTAsMTEsMTIsMTUsMTYsMTddLCJlIjoxNTI0OTA3MzMxNDcwLCJ0IjoxLCJ1IjoyMzg4NiwibiI6WyIyMDE2MyJdLCJkdCI6WyIqIl19fQ.Z9anvKqpJMAVJ9Zv6dltxnTNisT_-zRNKU2b-oX2xOQ'
 # Put your device id
 DEVICE_ID = 'CoAP-Python-Test-Device'
 DEVICE_COMMAND = 'Test-Command'
@@ -88,6 +88,9 @@ class DeviceHiveCoAPClient(object):
         if action == 'command/update' \
                 and self._command_update_handler is not None:
             self._command_update_handler(self, payload['command'])
+        if action == 'notification/insert' \
+                and self._notification_handler is not None:
+            self._notification_handler(self, payload['notification'])
 
     @staticmethod
     def _decode_response_payload(payload):
@@ -127,7 +130,6 @@ class DeviceHiveCoAPClient(object):
         request_id = self._message_id_request(payload)
         payload = self._wait_event(request_id)
         if payload['status'] != 'success':
-            self.stop()
             raise DeviceHiveCoAPClientException(
                 'response code: %s, error: %s' % (payload['code'],
                                                   payload['error']))
@@ -189,6 +191,14 @@ class DeviceHiveCoAPClient(object):
         }
         return self._wait_message_id_request(payload)['subscriptionId']
 
+    def subscribe_notification(self, device_id, handler):
+        self._notification_handler = handler
+        payload = {
+            'action': 'notification/subscribe',
+            'deviceId': device_id
+        }
+        return self._wait_message_id_request(payload)['subscriptionId']
+
     def stop(self):
         self._event_client.stop()
 
@@ -203,10 +213,16 @@ def handle_command_update(_, command):
     print(command)
 
 
+def handle_notification(_, notification):
+    print('---NOTIFICATION---')
+    print(notification)
+
+
 dh_client = DeviceHiveCoAPClient(SERVER_HOST, SERVER_PORT)
 dh_client.authorize(ACCESS_TOKEN)
 dh_client.create_device(DEVICE_ID)
 dh_client.subscribe_command_insert(DEVICE_ID, handle_command_insert)
 dh_client.subscribe_command_update(DEVICE_ID, handle_command_update)
+dh_client.subscribe_notification(DEVICE_ID, handle_notification)
 command_id = dh_client.send_command(DEVICE_ID, DEVICE_COMMAND)
 dh_client.update_command(DEVICE_ID, command_id, 'updated', {'result': True})
