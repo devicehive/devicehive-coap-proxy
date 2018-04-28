@@ -15,11 +15,15 @@ const SOCKET_ID_OPTION = '111';
 const coapRequestParams = {
     host: HOST_TEST,
     port: COAP_PORT_TEST,
-    method: 'GET',
+    method: 'GET'
+};
+
+const coapObserveRequestParams = {
+    ...coapRequestParams,
     observe: true
 };
 
-describe('Coap Proxy module', function() {
+describe('CoAP Proxy', function() {
     this.timeout(300);
 
     let wsServer;
@@ -38,12 +42,12 @@ describe('Coap Proxy module', function() {
         proxy.maxWSConnections(10);
     });
 
-    it('Should proxy CoAP request to WS server', done => {
+    it('Should proxy CoAP request to WS server connection', done => {
         wsServer.on('connection', socket => {
             done();
         });
 
-        coap.request(coapRequestParams).end();
+        coap.request(coapObserveRequestParams).end();
     });
 
     it('Should proxy messages from WS server', done => {
@@ -51,7 +55,7 @@ describe('Coap Proxy module', function() {
             socket.send('{"test":"test"}');
         });
 
-        coap.request(coapRequestParams).on('response', res => {
+        coap.request(coapObserveRequestParams).on('response', res => {
             res.on('data', data => {
                 const msg = JSON.parse(data.toString());
 
@@ -65,40 +69,17 @@ describe('Coap Proxy module', function() {
         }).end();
     });
 
-    it('Should send first piggybacked response in case request is valid (observe request) with status 0', done => {
-        let msgCount = 0;
-        coap.request(coapRequestParams).on('response', res => {
+    it('Should send response when WS is opened and ID is created', done => {
+        coap.request(coapObserveRequestParams).on('response', res => {
             res.on('data', data => {
                 const msg = JSON.parse(data.toString());
-
-                if (msgCount === 0 && msg.status === 0) {
-                    done();
-                    return;
-                } else if (msgCount !== 0) {
-                    done(new Error('First piggybacked response does not have status 0'));
-                }
-
-                msgCount++;
+                assert.notEqual(typeof msg.id, 'undefined');
+                done();
             });
         }).end();
     });
 
-    it('Should send second response when WS is opened and ID is created', done => {
-        let msgCount = 0;        
-        coap.request(coapRequestParams).on('response', res => {
-            res.on('data', data => {
-                msgCount++;
-
-                if (msgCount === 2) {
-                    const msg = JSON.parse(data.toString());
-                    assert.notEqual(typeof msg.id, 'undefined');
-                    done();
-                }
-            });
-        }).end();
-    });
-
-    it('Should proxy further coap observe requests as messages to WS server', done => {
+    it('Should proxy further coap requests (not OBSERVE) as messages to WS server', done => {
         wsServer.on('connection', socket => {
             socket.on('message', msg => {
                 assert.equal(msg.toString(), 'test');
@@ -108,7 +89,7 @@ describe('Coap Proxy module', function() {
 
         coap.registerOption('111', str => new Buffer(str), buff => buff.toString());
 
-        coap.request(coapRequestParams).on('response', res => {
+        coap.request(coapObserveRequestParams).on('response', res => {
             res.on('data', data => {
                 const msg = JSON.parse(data.toString());
                 
@@ -150,6 +131,7 @@ describe('Coap Proxy module', function() {
         const client = udp.createSocket('udp4');
 
         wsServer.on('connection', socket => {
+            socket.send('test'); // WORKAROUND TO MAKE CUSTOM CLIENT RESEND RESET MESSAGE
             socket.on('close', () => {
                 client.close();
                 done();
@@ -159,6 +141,7 @@ describe('Coap Proxy module', function() {
         sendObserveRequest(client);
 
         client.on('message', msg => {
+            // send reset
             const packet = coapPacket.parse(msg);
             const message = coapPacket.generate({
                 reset: true,
@@ -175,7 +158,7 @@ describe('Coap Proxy module', function() {
             res.on('data', data => {
                 const msg = JSON.parse(data.toString());
 
-                assert.equal(msg.error, 'Only Observe requests are supported');
+                assert.equal(msg.error, 'Valid 111 header (socket ID) is required');
                 done();
             });
         }).end();
@@ -184,17 +167,17 @@ describe('Coap Proxy module', function() {
     it('Should respond with error in case proxy has reached maximum WS connections', done => {
         proxy.maxWSConnections(1);
 
-        coap.request(coapRequestParams).on('response', res => {
+        coap.request(coapObserveRequestParams).on('response', res => {
             res.on('data', data => {
                 const msg = JSON.parse(data.toString());
 
                 if (msg.id) {
-                    coap.request(coapRequestParams).on('response', res => {
+                    coap.request(coapObserveRequestParams).on('response', res => {
                         res.on('data', data => {
                             const msg = JSON.parse(data.toString());
 
                             if (msg.error) {
-                                assert.equal(msg.error, 'proxy has reached maximum WS connections');
+                                assert.equal(msg.error, 'Proxy has reached maximum WS connections');
                                 done();
                             }
                         });

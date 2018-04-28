@@ -1,4 +1,4 @@
-const coap = require('coap');
+const coap = require('./coap');
 const WS = require('ws');
 const debug = require('debug')('coap-proxy');
 
@@ -9,7 +9,7 @@ class CoapProxy {
         }
 
         this._target = target;
-        this._server = coap.createServer();
+        this._server = coap.createServer({ piggybackReplyMs: 1 });
         this._sockets = new Map();
         this._maxWSConnections = maxConnections;
 
@@ -48,30 +48,44 @@ class CoapProxy {
 
                 if (this.hasReachedMaxWSConnections()) {
                     debug('Proxy has reached maximum WS connections! Rejecting request...');
-                    res.end(JSON.stringify({ error: 'proxy has reached maximum WS connections' }));
+                    res.end(JSON.stringify({ error: 'Proxy has reached maximum WS connections' }));
                     return;
                 }
 
-                this._handleObserveRequest(req, res);
+                if (this._getSocket(req)) {
+                    res.end(JSON.stringify({ error: 'Socket with this ID (111 header) already exists, please issue not oberve request to send WS message' }));
+                } else {
+                    this._handleRequest(req, res);
+                }
             } else {
-                debug('Not Observe request, rejecting...');
-                res.end(JSON.stringify({ error: 'Only Observe requests are supported' }));
+                if (this._getSocket(req)) {
+                    this._handleRequest(req, res);
+                } else {
+                    debug('Not Observe request to unexisting socket, rejecting...');
+                    res.end(JSON.stringify({ error: 'Valid 111 header (socket ID) is required' }));
+                }
             }
         });
     }
 
-    _handleObserveRequest(coapReq, coapConnection) {
-        const id = this._getSocketIdOption(coapReq.options);
-        const socket = id && id.value && this._sockets.get(id.value.toString());
+    _handleRequest(coapReq, coapConnection) {
+        const socket = this._getSocket(coapReq);
 
         if (socket) {
             this._proxyMessage(coapReq, socket).then(stringMsg => {
-                debug(`id: ${id.value} — CoAP message ${stringMsg}`);
+                debug(`id: ${socket.coapId} — CoAP message ${stringMsg}`);
+                coapConnection.end();
             });
         } else {
-            this._piggybackedResponse(coapConnection);
             this._establishWebsocket(coapConnection);
         }
+    }
+
+    _getSocket(coapReq) {
+        const id = this._getSocketIdOption(coapReq.options);
+        const socket = id && id.value && this._sockets.get(id.value.toString());
+
+        return socket;
     }
 
     _getSocketIdOption(options = []) {
@@ -111,6 +125,7 @@ class CoapProxy {
         socket.on('open', () => {
             debug(`id: ${id} — WebSocket has been opened`);
             coapConnection.write(JSON.stringify({ id }));
+            socket.coapId = id;
         }).on('close', () => {
             debug(`id: ${id} — WebSocket has been closed`);
             this._resetCoapConnection(coapConnection, id);

@@ -3,12 +3,16 @@ const coap = require('coap');
 coap.registerOption('111', Buffer, String);
 
 const reqParams = {
-    observe: true,
     host: 'localhost',
     port: 53
 };
 
-coap.request(reqParams).on('response', resStream => {
+const obsReqParams  = {
+    observe: true,
+    ...reqParams
+};
+
+coap.request(obsReqParams).on('response', resStream => {
     resStream.on('data', data => {
         const msg = JSON.parse(data.toString());
 
