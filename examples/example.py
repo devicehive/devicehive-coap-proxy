@@ -160,6 +160,18 @@ class DeviceHiveCoAPClient(object):
         }
         return self._wait_message_id_request(payload)['command']['id']
 
+    def update_command(self, device_id, command_id, status, result):
+        payload = {
+            'action': 'command/update',
+            'deviceId': device_id,
+            'commandId': command_id,
+            'command': {
+                'status': status,
+                'result': result
+            }
+        }
+        self._wait_message_id_request(payload)
+
     def subscribe_command_insert(self, device_id, handler):
         self._command_insert_handler = handler
         payload = {
@@ -195,4 +207,6 @@ dh_client = DeviceHiveCoAPClient(SERVER_HOST, SERVER_PORT)
 dh_client.authorize(ACCESS_TOKEN)
 dh_client.create_device(DEVICE_ID)
 dh_client.subscribe_command_insert(DEVICE_ID, handle_command_insert)
-dh_client.send_command(DEVICE_ID, DEVICE_COMMAND)
+dh_client.subscribe_command_update(DEVICE_ID, handle_command_update)
+command_id = dh_client.send_command(DEVICE_ID, DEVICE_COMMAND)
+dh_client.update_command(DEVICE_ID, command_id, 'updated', {'result': True})
