@@ -12,6 +12,8 @@ const obsReqParams  = {
     ...reqParams
 };
 
+const ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN';
+
 const DEVICE_ID = 'coap-test-node';
 const COMMAND = 'coap-test-node-command';
 const COMMAND_UPDATED_STATUS = 'updated';
@@ -27,9 +29,7 @@ coap.request(obsReqParams).on('response', resStream => {
                 111: msg.id
             };
 
-            createToken();
-        } else if (msg.accessToken) {
-            auth(msg.accessToken);
+            auth(ACCESS_TOKEN);
         }
         
         if (isSuccess(msg)) {

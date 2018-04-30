@@ -15,4 +15,5 @@ So as a result of execution you will see notification and command payloads recei
 
 ## Node.js
 1. Execute `npm i` in app root
-2. Execute `npm run example` in app root
+2. Set your access token to `ACCESS_TOKEN` variable in `node.js`
+3. `node node.js`
