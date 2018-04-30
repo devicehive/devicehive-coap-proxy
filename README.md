@@ -5,15 +5,8 @@ CoAP to WS proxy written in Node.js
 **Prerequisite: DeviceHive with WebSocket API must be running.**
 
 1. Run CoAP proxy:
-    - Set up appropriate env variables in `docker-compose.yml` **(PROXY_TARGET is a must)**
-        - `docker-compose.yml` configuration example:
-            ```
-            environment:
-              - ENVSEPARATOR=_
-              - DEBUG=coap-proxy
-              - PROXY_TARGET=ws://playground-dev.devicehive.com/api/websocket
-            ```
-    - `docker-compose up`
+    - `docker build -t coap-proxy .`
+    - `docker run -e DEBUG=coap-proxy -e PROXY.TARGET=ws://playground-dev.devicehive.com/api/websocket coap-proxy`
 2. Run `npm run example` to launch Node.js example
 
 Observe new Device have been created for default DH admin user (dhadmin)
