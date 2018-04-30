@@ -15,7 +15,7 @@ CoAP to WS proxy written in Node.js
             ```
     - `docker-compose up`
 2. Run `npm run example` to launch Node.js example
-3. To run `python` example you need to install CoAPthon library: `sudo pip install CoAPthon`. Than you need to set `ACCESS_TOKEN` inside `example.py`
+3. To run `python` example you need to install CoAPthon library: `sudo pip install CoAPthon`. Then you need to set `ACCESS_TOKEN` inside `examples/python.py`
 
 Observe new Network and Device have been created for default DH admin user (dhadmin)
 
@@ -23,7 +23,7 @@ Observe new Network and Device have been created for default DH admin user (dhad
 
 # How it works
 - To open connection issue Observe request to CoAP proxy and this will open WebSocket to the specified target. **Response obtained from first Observe request is main readable stream** which will be used to receive messages that server will forward from target to your client
-- To communicate with target WS server through CoAP proxy you must use not Observe requests with `111` header with socket ID you will receive after successful connection establishment
+- To communicate with target WS server through CoAP proxy you must use not Observe requests with `111` header with socket ID you will receive after successful connection establishment. See [Node.js](https://github.com/devicehive/devicehive-coap-proxy/blob/development/examples/createNetworkWithDevice.js#L3) and [Python](https://github.com/devicehive/devicehive-coap-proxy/blob/development/examples/example.py#L22) examples
 - Proxy uses JSON as data format for communication
 
 # Configuration
