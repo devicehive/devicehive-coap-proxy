@@ -13,7 +13,7 @@ Observe new Device have been created for default DH admin user (dhadmin)
 
 # How it works
 - To open connection issue Observe request to CoAP proxy and this will open WebSocket to the specified target
-- Messages which proxy pushes to your client contain `Observe` header and token of observation. This means that every message from proxy will be a response to first Observe request that initiated connection. (See how it handled in [Node.js example](https://github.com/devicehive/devicehive-coap-proxy/blob/development/examples/createNetworkWithDevice.js#L20))
+- Messages which proxy pushes to your client contain `Observe` header and token of observation. This means that every message from proxy will be a response to first Observe request that initiated connection (see how it handled in [Node.js example](https://github.com/devicehive/devicehive-coap-proxy/blob/development/examples/createNetworkWithDevice.js#L20))
 - To communicate with target WS server through CoAP proxy you must use not Observe requests with `111` header with socket ID you will receive after successful connection establishment. See [Node.js](https://github.com/devicehive/devicehive-coap-proxy/blob/development/examples/createNetworkWithDevice.js#L3) and [Python](https://github.com/devicehive/devicehive-coap-proxy/blob/development/examples/example.py#L22) examples
 - Proxy uses JSON as data format for communication
 
