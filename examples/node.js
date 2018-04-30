@@ -59,14 +59,6 @@ function isSuccess(msg) {
     return msg.status === 'success';
 }
 
-function createToken() {
-    coap.request(reqParams).end(JSON.stringify({
-        action: 'token',
-        login: 'dhadmin',
-        password: 'dhadmin_#911'
-    }));
-}
-
 function auth(accessToken) {
     coap.request(reqParams).end(JSON.stringify({
         action: 'authenticate',
