@@ -15,9 +15,8 @@ CoAP to WS proxy written in Node.js
             ```
     - `docker-compose up`
 2. Run `npm run example` to launch Node.js example
-3. To run `python` example you need to install CoAPthon library: `sudo pip install CoAPthon`. Then you need to set `ACCESS_TOKEN` inside `examples/python.py`
 
-Observe new Network and Device have been created for default DH admin user (dhadmin)
+Observe new Device have been created for default DH admin user (dhadmin)
 
 **Note: If you want to scale CoAP proxy ensure you have added more upstream servers in nginx/nginx.conf**
 
