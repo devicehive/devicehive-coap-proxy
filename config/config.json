@@ -1,6 +1,6 @@
 {
     "HOST": "0.0.0.0",
     "PORT": 5683,
-    "TARGET": "ws://playground-dev.devicehive.com/api/websocket",
+    "TARGET": "ws://playground.devicehive.com/api/websocket",
     "MAX_WS_CONNECTIONS": 50
 }
